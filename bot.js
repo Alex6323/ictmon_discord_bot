@@ -1,5 +1,6 @@
 var discord = require('discord.io');
 var auth = require('./auth.json');
+var addr = require('./addr.json');
 var zmq = require('zmq');
 var _channelID = '';
 
@@ -22,7 +23,7 @@ socket.on('message', function (tps) {
 			"fields": [
 				{
 					"name": "TPS (1 minute)",
-					"value": '${tps}',
+					"value": `${tps}`,
 					"inline": true
 				},
 			]
@@ -47,6 +48,9 @@ bot.on('ready', function (evt) {
 });
 
 bot.on('message', function (user, userID, channelID, message, evt) {
+
+	_channelID = channelID;
+
 	if (message.substring(0, 1) == '!') {
 		var args = message.substring(1).split(' ');
 		var cmd = args[0];
@@ -55,7 +59,6 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 		args = args.splice(1);
 		switch (cmd) {
 			case 'tps': {
-				_channelID = channelID;
 				sendTpsRequest();
 				break;
 			}
@@ -87,6 +90,18 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 						"  \\__/   \\__/  |_```"
 				});
 				break;
+			}
+			case 'me': {
+				var data = {
+					"to": _channelID,
+					"embed": {
+						"color": 532392,
+						"image": {
+							"url": "http://" + addr.address + ":" + addr.port + "/"
+						}
+					}
+				};
+				bot.sendMessage(data);
 			}
 		}
 	}
