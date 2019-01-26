@@ -10,31 +10,82 @@ const ZMQ_PORT = 5562;
 console.log('ictmon Discord bot started.');
 console.log('Trying to connect...');
 
+
+var uri_me = 'http://'+addr.address+':'+addr.port+'/me.png'; 
+console.log(uri_me);
+
+var uri_graph = 'http://'+addr.address+':'+addr.port+'/graph.png';
+console.log(uri_graph);
+
 const socket = zmq.socket('req');
 socket.connect(ZMQ_HOST + ':' + ZMQ_PORT);
 
-socket.on('message', function (tps) {
+socket.on('message', function (msg) {
 	console.log('Response received');
+	
+	var test = msg.toString();
+	var parts = test.split(":");
+	var topic = parts[0];
+	
+	if (topic == 'tps') {
+		var tps = parts[1]; 
+		var data = {
+			"to": _channelID,
+			"embed": {
+				"color": 532392,
+				"fields": [
+					{
+						"name": "TPS (1 minute)",
+						"value": `${tps}`,
+						"inline": true
+					},
+				]
+			}
+		};
+	} else if (topic == 'tps10') {
+		var tps = parts[1]; 
+		var data = {
+			"to": _channelID,
+			"embed": {
+				"color": 532392,
+				"fields": [
+					{
+						"name": "TPS (10 minutes)",
+						"value": `${tps}`,
+						"inline": true
+					},
+				]
+			}
+		};
+		
+	} else if (topic == 'graph') {
+		var data = {
+			"to": _channelID,
+			"embed": {
+				"color": 532392,
+				"image": {
+					"url": `${uri_graph}`
+				}
+			}
+		};
+	}
 
-	var data = {
-		"to": _channelID,
-		"embed": {
-			"color": 532392,
-			"fields": [
-				{
-					"name": "TPS (1 minute)",
-					"value": `${tps}`,
-					"inline": true
-				},
-			]
-		}
-	};
 	bot.sendMessage(data);
 });
 
 function sendTpsRequest() {
 	console.log('Sending tps request...');
 	socket.send('tps');
+}
+
+function sendTps2Request() {
+	console.log('Sending tps2 request...');
+	socket.send('tps2');
+}
+
+function sendGraphRequest() {
+	console.log('Sending graph request...');
+	socket.send('graph');
 }
 
 var bot = new discord.Client({
@@ -62,6 +113,10 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 				sendTpsRequest();
 				break;
 			}
+			case 'tps2': {
+				sendTps2Request();
+				break;
+			}
 			case 'm#': {
 				bot.sendMessage({
 					to: channelID,
@@ -83,12 +138,8 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 				});
 				break;
 			}
-			case 'chart': {
-				bot.sendMessage({
-					to: channelID,
-					message: "```/\\    ___    _/| \n" +
-						"  \\__/   \\__/  |_```"
-				});
+			case 'graph': {
+				sendGraphRequest();
 				break;
 			}
 			case 'me': {
@@ -97,11 +148,12 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 					"embed": {
 						"color": 532392,
 						"image": {
-							"url": "http://" + addr.address + ":" + addr.port + "/"
+							"url": `${uri_me}`
 						}
 					}
 				};
 				bot.sendMessage(data);
+				break;
 			}
 		}
 	}
