@@ -24,6 +24,8 @@ socket.on('message', function (msg) {
 	console.log('Response received');
 	
 	var test = msg.toString();
+	console.log(test);
+
 	var parts = test.split(":");
 	var topic = parts[0];
 	
@@ -42,7 +44,7 @@ socket.on('message', function (msg) {
 				]
 			}
 		};
-	} else if (topic == 'tps10') {
+	} else if (topic == 'tps2') {
 		var tps = parts[1]; 
 		var data = {
 			"to": _channelID,
@@ -113,7 +115,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 				sendTpsRequest();
 				break;
 			}
-			case 'tps2': {
+			case 'tps10': {
 				sendTps2Request();
 				break;
 			}
