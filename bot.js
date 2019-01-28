@@ -4,33 +4,31 @@ var addr = require('./addr.json');
 var zmq = require('zmq');
 var _channelID = '';
 
-const ZMQ_HOST = 'tcp://localhost';
+const ZMQ_HOST = 'localhost';
 const ZMQ_PORT = 5562;
+const ZMQ_ADDR = 'tcp://' + ZMQ_HOST + ':' + ZMQ_PORT;
+const ZMQ_TYPE = 'req';
 
-console.log('ictmon Discord bot started.');
-console.log('Trying to connect...');
+console.log('--------------------------------------');
+console.log('Info: IDB (Ictmon Discord Bot) started.');
 
+const socket = zmq.socket(ZMQ_TYPE);
+socket.connect(ZMQ_ADDR);
+console.log('Info: Trying to connect to Ictmon API on: ' + ZMQ_ADDR);
 
-var uri_me = 'http://'+addr.address+':'+addr.port+'/me.png'; 
-console.log(uri_me);
-
-var uri_graph = 'http://'+addr.address+':'+addr.port+'/graph.png';
-console.log(uri_graph);
-
-const socket = zmq.socket('req');
-socket.connect(ZMQ_HOST + ':' + ZMQ_PORT);
+var resource_base_url = 'http://' + addr.address + ':' + addr.port + '/';
+console.log('Info: Resource base URL: ' + resource_base_url);
+console.log('--------------------------------------');
 
 socket.on('message', function (msg) {
-	console.log('Response received');
-	
-	var test = msg.toString();
-	console.log(test);
+	var msg_str = msg.toString();
+	console.log('Info: Response received: ', msg_str);
 
-	var parts = test.split(":");
-	var topic = parts[0];
-	
-	if (topic == 'tps') {
-		var tps = parts[1]; 
+	var parts = msg_str.split(";");
+	var request = parts[0];
+
+	if (request == 'tps') {
+		var tps = parts[1];
 		var data = {
 			"to": _channelID,
 			"embed": {
@@ -44,8 +42,8 @@ socket.on('message', function (msg) {
 				]
 			}
 		};
-	} else if (topic == 'tps2') {
-		var tps = parts[1]; 
+	} else if (request == 'tps10') {
+		var tps = parts[1];
 		var data = {
 			"to": _channelID,
 			"embed": {
@@ -59,14 +57,16 @@ socket.on('message', function (msg) {
 				]
 			}
 		};
-		
-	} else if (topic == 'graph') {
+
+	} else if (request == 'graph') {
+		var filename = parts[1];
+		var url = resource_base_url + filename;
 		var data = {
 			"to": _channelID,
 			"embed": {
 				"color": 532392,
 				"image": {
-					"url": `${uri_graph}`
+					"url": `${url}`
 				}
 			}
 		};
@@ -81,8 +81,8 @@ function sendTpsRequest() {
 }
 
 function sendTps2Request() {
-	console.log('Sending tps2 request...');
-	socket.send('tps2');
+	console.log('Sending tps10 request...');
+	socket.send('tps10');
 }
 
 function sendGraphRequest() {
@@ -111,6 +111,14 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 
 		args = args.splice(1);
 		switch (cmd) {
+			case 'help': {
+				bot.sendMessage({
+					to: channelID,
+					message: "```!tps\n!tps10\n!graph\n```"
+
+				});
+				break;
+			}
 			case 'tps': {
 				sendTpsRequest();
 				break;
@@ -119,42 +127,8 @@ bot.on('message', function (user, userID, channelID, message, evt) {
 				sendTps2Request();
 				break;
 			}
-			case 'm#': {
-				bot.sendMessage({
-					to: channelID,
-					message: "He left me for a shorter hash!!! :cry: "
-				});
-				break;
-			}
-			case 'ixuz': {
-				bot.sendMessage({
-					to: channelID,
-					message: "Let's play poker!"
-				});
-				break;
-			}
-			case 'cfb': {
-				bot.sendMessage({
-					to: channelID,
-					message: "Yes?"
-				});
-				break;
-			}
 			case 'graph': {
 				sendGraphRequest();
-				break;
-			}
-			case 'me': {
-				var data = {
-					"to": _channelID,
-					"embed": {
-						"color": 532392,
-						"image": {
-							"url": `${uri_me}`
-						}
-					}
-				};
-				bot.sendMessage(data);
 				break;
 			}
 		}
